@@ -1,0 +1,170 @@
+// ... existing code ...
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from 'firebase/auth';
+import { getFirestore, doc, setDoc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
+import { 
+  BookOpen, Cpu, Bot, LayoutDashboard, User, CheckCircle2, 
+  Play, RefreshCw, Send, BrainCircuit, Cable, Settings, 
+  Trash2, X, AlertCircle, TableProperties, Wand2, ArrowRight,
+  CircuitBoard, Clock, Star, ArrowLeft, Home
+} from 'lucide-react';
+
+// --- FIREBASE SETUP ---
+// ... existing code ...
+      <div className="bg-slate-800 p-3 rounded-lg border border-slate-700 flex flex-wrap gap-2 items-center shrink-0">
+        {keys.map(k => (
+          <button key={k.val} onClick={() => onKeyPress(k.val)} className="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-sm font-mono font-bold transition-colors">
+            {k.label}
+          </button>
+        ))}
+        <button onClick={() => onKeyPress('BACKSPACE')} className="bg-red-900/50 hover:bg-red-600/80 text-red-200 px-3 py-1.5 rounded text-sm font-bold transition-colors ml-auto">
+          Del
+        </button>
+      </div>
+    );
+  };
+  
+// --- HOME PAGE COMPONENT ---
+const HomeView = ({ onNavigate }) => (
+  <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+    {/* Moving Background Effect */}
+    <div className="absolute inset-0 opacity-20 animate-[pan_40s_linear_infinite]" 
+         style={{ backgroundImage: 'radial-gradient(circle at center, #22d3ee 1px, transparent 1px)', backgroundSize: '40px 40px' }}>
+    </div>
+    
+    <div className="z-10 text-center space-y-6 p-8 bg-slate-900/50 backdrop-blur-md rounded-3xl border border-slate-800">
+       <div className="flex justify-center mb-4"><Cpu size={64} className="text-cyan-400" /></div>
+       <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 tracking-tight">
+         Welcome to ENTC.lab
+       </h1>
+       <p className="text-lg text-slate-300 max-w-xl mx-auto leading-relaxed">
+         Explore the magical world of electronics with Jarvis AI, build circuits in the Logic Simulator, and drop components into your own PCB!
+       </p>
+       <div className="flex gap-4 justify-center mt-8">
+          <button onClick={()=>onNavigate('simulator')} className="px-8 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold text-white shadow-lg transition-colors flex items-center gap-2">
+            <BrainCircuit size={20}/> Open Simulator
+          </button>
+          <button onClick={()=>onNavigate('pcb')} className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold text-white shadow-lg transition-colors flex items-center gap-2">
+            <CircuitBoard size={20}/> PCB Designer
+          </button>
+          <button onClick={()=>onNavigate('modules')} className="px-8 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-bold text-slate-200 transition-colors flex items-center gap-2">
+            <BookOpen size={20}/> Modules
+          </button>
+       </div>
+    </div>
+    <style>{`@keyframes pan { 0% { background-position: 0px 0px; } 100% { background-position: 400px 400px; } }`}</style>
+  </div>
+);
+
+// --- PCB DESIGNER COMPONENT ---
+const PCBDesigner = () => {
+  const [items, setItems] = useState([]);
+  const pcbComponents = ['Battery', 'LED', 'Capacitor', 'Diode', 'Resistor'];
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const type = e.dataTransfer.getData('type');
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (type) setItems([...items, { id: Date.now(), type, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
+  };
+  
+  const handleDragOver = (e) => e.preventDefault();
+
+  return (
+    <div className="flex h-full gap-6 animate-in fade-in duration-500">
+      <div className="w-56 bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3 shadow-xl">
+        <h3 className="font-bold text-cyan-400 mb-2 flex items-center gap-2"><CircuitBoard size={18}/> Toolbox</h3>
+        <p className="text-xs text-slate-400 mb-2">Drag items to the green board.</p>
+        {pcbComponents.map(c => (
+          <div key={c} draggable onDragStart={(e) => e.dataTransfer.setData('type', c)} 
+               className="p-3 bg-slate-800 rounded-xl border border-slate-700 cursor-grab hover:border-cyan-500 hover:bg-slate-700 text-sm font-bold text-slate-200 flex items-center gap-2 transition-colors shadow-sm">
+             <Settings size={14} className="text-slate-400"/> {c}
+          </div>
+        ))}
+        <button onClick={() => setItems([])} className="mt-auto p-3 bg-red-900/30 text-red-400 hover:bg-red-900/60 rounded-xl border border-red-900/50 text-sm font-bold transition-colors">
+          Clear Board
+        </button>
+      </div>
+      
+      <div onDrop={handleDrop} onDragOver={handleDragOver} 
+           className="flex-1 bg-green-950/40 border-2 border-green-800/50 rounded-2xl relative overflow-hidden shadow-inner flex items-center justify-center"
+           style={{ backgroundImage: 'linear-gradient(#064e3b 1px, transparent 1px), linear-gradient(90deg, #064e3b 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+        
+        {items.length === 0 && <span className="text-green-800 font-bold text-2xl uppercase tracking-widest opacity-50">Drop Components Here</span>}
+        
+        {items.map(item => (
+          <div key={item.id} style={{left: item.x - 40, top: item.y - 20}} 
+               onClick={() => setItems(items.filter(i => i.id !== item.id))} title="Click to remove"
+               className="absolute px-3 py-1.5 bg-slate-950/90 text-xs font-mono font-bold text-emerald-400 border border-emerald-500 rounded shadow-[0_0_15px_rgba(16,185,129,0.3)] backdrop-blur cursor-pointer hover:bg-red-900/90 hover:text-red-400 hover:border-red-500 hover:shadow-red-500/30 transition-all select-none">
+            {item.type}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// --- SYLLABUS, FLASHCARDS, & QUIZ COMPONENTS ---
+const SYLLABUS = [
+  {
+    id: 1, title: 'Chapter 1: Basic Gates',
+    theory: "Imagine you have two magical doors (AND gate). Both you AND your friend must push your doors open at the exact same time to get the candy! An OR gate is like a front and back door - if either you OR your friend opens a door, you get the candy! A NOT gate is just Opposite Day; if you say YES, the gate says NO!",
+    flashcards: [
+      { q: "What does an AND gate need?", a: "Both inputs to be YES (1)!" },
+      { q: "Which gate is Opposite Day?", a: "The NOT gate!" }
+    ],
+    quiz: [
+      { q: "If you have an AND gate, and input A is 1, but input B is 0, what is the output?", options: ["0", "1"], answer: "0" },
+      { q: "If you have an OR gate, and you push one button (1), what happens?", options: ["Nothing (0)", "Candy! (1)"], answer: "Candy! (1)" }
+    ]
+  },
+  {
+    id: 2, title: 'Chapter 2: Universal Gates',
+    theory: "NAND and NOR gates are like superhero transformers! They are called 'Universal' because they can pretend to be ANY other gate if you wire them up right. A NAND gate is just an AND gate wearing a NOT gate hat!",
+    flashcards: [
+      { q: "Why are they called Universal?", a: "Because they can build ANY other gate!" },
+      { q: "What is a NAND gate?", a: "An AND gate followed by a NOT gate." }
+    ],
+    quiz: [
+      { q: "Can a NAND gate act like a NOT gate?", options: ["Yes", "No"], answer: "Yes" }
+    ]
+  },
+  {
+    id: 3, title: 'Chapter 3: Combinational Gates',
+    theory: "This is when we stick lots of small magical boxes together to build a super-duper robot brain! The robot brain doesn't remember the past, it only cares about the buttons you are pushing right now.",
+    flashcards: [
+      { q: "Do combinational circuits have memory?", a: "No, they only look at current inputs!" }
+    ],
+    quiz: [
+      { q: "If a circuit only depends on what you press right now, it is...", options: ["Sequential", "Combinational"], answer: "Combinational" }
+    ]
+  },
+  {
+    id: 4, title: 'Chapter 4: The Half Adder',
+    theory: "A math machine! It takes two blocks (1s and 0s) and counts them. It tells you the SUM, and if the number is too big to fit in one hand, it 'CARRYS' one over, just like when you do big math in school!",
+    flashcards: [
+      { q: "What two outputs does a Half Adder have?", a: "Sum and Carry!" }
+    ],
+    quiz: [
+      { q: "1 + 1 in binary using a Half Adder gives a Sum of...", options: ["0", "1", "2"], answer: "0" },
+      { q: "...and a Carry of?", options: ["0", "1"], answer: "1" }
+    ]
+  },
+  {
+    id: 5, title: 'Chapter 5: The Full Adder',
+    theory: "A bigger, stronger math machine! A Half Adder can only add two numbers, but a Full Adder can add THREE numbers at once (Input A, Input B, and a Carry from a friend). It's perfect for adding really huge numbers together!",
+    flashcards: [
+      { q: "How many inputs does a Full Adder have?", a: "Three (A, B, and Carry-In)" }
+    ],
+    quiz: [
+      { q: "What is the main difference between a Half Adder and a Full Adder?", options: ["Full Adder is slower", "Full Adder takes a Carry-In"], answer: "Full Adder takes a Carry-In" }
+    ]
+  }
+];
+
+const Flashcard = ({ q, a }) => {
+  const [flipped, setFlipped] = useState(false);
+  return (
+    <div onClick={() => setFlipped(!flipped)} className="relative w-64 h-40 cursor-pointer" style={{ perspective: '1000px' }}>
+      <div className="w-full h-full transition-transform duration-500 shadow-xl rounded-xl" style={{ transformStyle: 'preserve-3d', transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
+        {/* Front */}
